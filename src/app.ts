@@ -6,10 +6,24 @@ import { errorHandler } from './middlewares/errorHandler';
 
 const app = express();
 
+const allowedOrigins = new Set([
+  config.frontendUrl,
+  'https://ar-carrer-point.netlify.app',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+].map((origin) => origin.trim().replace(/\/$/, '')));
+
 // Middlewares
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Requests without an Origin header are server-to-server or local health checks.
+      if (!origin || allowedOrigins.has(origin.replace(/\/$/, ''))) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
     credentials: true,
   })
 );
