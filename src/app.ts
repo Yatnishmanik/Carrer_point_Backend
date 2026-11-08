@@ -7,9 +7,29 @@ import { errorHandler } from './middlewares/errorHandler';
 const app = express();
 
 // Middlewares
+const allowedOrigins = [
+  ...config.frontendUrl.split(',').map((u) => u.trim().replace(/\/$/, '')),
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: [config.frontendUrl, 'http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.replace(/\/$/, '');
+      if (
+        allowedOrigins.includes(cleanOrigin) ||
+        allowedOrigins.includes('*') ||
+        cleanOrigin.endsWith('.vercel.app') ||
+        cleanOrigin.endsWith('.onrender.com') ||
+        process.env.NODE_ENV !== 'production'
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Permissive CORS for student portal APIs
+    },
     credentials: true,
   })
 );
